@@ -1,0 +1,254 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct Book {
+    char title[100];
+    char author[100];
+    int year;
+    int pages;
+    float price;
+    struct Book* next;
+} Book;
+
+Book* createBook() {
+    Book* newBook = (Book*)malloc(sizeof(Book));
+    if (!newBook) {
+        printf("Memory allocation error.\n");
+        exit(1);
+    }
+    printf("Title: ");
+    fgets(newBook->title, 100, stdin);
+    newBook->title[strcspn(newBook->title, "\n")] = 0;
+
+    printf("Author: ");
+    fgets(newBook->author, 100, stdin);
+    newBook->author[strcspn(newBook->author, "\n")] = 0;
+
+    printf("Year: ");
+    scanf("%d", &newBook->year);
+    printf("Pages: ");
+    scanf("%d", &newBook->pages);
+    printf("Price: ");
+    scanf("%f", &newBook->price);
+    getchar();
+    newBook->next = NULL;
+    return newBook;
+}
+
+void displayBooks(Book* head) {
+    int i = 0;
+    while (head) {
+        printf("\nBook %d:\n", ++i);
+        printf("Title: %s\nAuthor: %s\nYear: %d\nPages: %d\nPrice: %.2f\n",
+               head->title, head->author, head->year, head->pages, head->price);
+        head = head->next;
+    }
+    if (i == 0) printf("The list is empty.\n");
+}
+
+void insertAtBeginning(Book** head) {
+    Book* newBook = createBook();
+    newBook->next = *head;
+    *head = newBook;
+}
+
+void insertAtEnd(Book** head) {
+    Book* newBook = createBook();
+    if (!*head) {
+        *head = newBook;
+        return;
+    }
+    Book* temp = *head;
+    while (temp->next) temp = temp->next;
+    temp->next = newBook;
+}
+
+void insertAtPosition(Book** head, int pos) {
+    if (pos <= 0) {
+        printf("Invalid position.\n");
+        return;
+    }
+    if (pos == 1) {
+        insertAtBeginning(head);
+        return;
+    }
+    Book* newBook = createBook();
+    Book* temp = *head;
+    for (int i = 1; i < pos - 1 && temp; i++) temp = temp->next;
+    if (!temp) {
+        printf("Invalid position.\n");
+        free(newBook);
+        return;
+    }
+    newBook->next = temp->next;
+    temp->next = newBook;
+}
+
+void deleteAtPosition(Book** head, int pos) {
+    if (!*head || pos <= 0) {
+        printf("Invalid position or empty list.\n");
+        return;
+    }
+    Book* temp = *head;
+    if (pos == 1) {
+        *head = temp->next;
+        free(temp);
+        return;
+    }
+    for (int i = 1; i < pos - 1 && temp; i++) temp = temp->next;
+    if (!temp || !temp->next) {
+        printf("Invalid position.\n");
+        return;
+    }
+    Book* toDelete = temp->next;
+    temp->next = toDelete->next;
+    free(toDelete);
+}
+
+int searchByTitle(Book* head, const char* title) {
+    int pos = 1;
+    while (head) {
+        if (strcmp(head->title, title) == 0)
+            return pos;
+        head = head->next;
+        pos++;
+    }
+    return -1;
+}
+
+void reverseList(Book** head) {
+    Book *prev = NULL, *curr = *head, *next = NULL;
+    while (curr) {
+        next = curr->next;
+        curr->next = prev;
+        prev = curr;
+        curr = next;
+    }
+    *head = prev;
+}
+
+void sortListByTitle(Book** head) {
+    if (!*head) return;
+    int swapped;
+    Book *ptr1;
+    Book *lptr = NULL;
+    do {
+        swapped = 0;
+        ptr1 = *head;
+        while (ptr1->next != lptr) {
+            if (strcmp(ptr1->title, ptr1->next->title) > 0) {
+                Book temp = *ptr1;
+                *ptr1 = *ptr1->next;
+                ptr1->next = ptr1->next->next;
+                ptr1->next->next = temp.next;
+                strcpy(ptr1->next->title, temp.title);
+                strcpy(ptr1->next->author, temp.author);
+                ptr1->next->year = temp.year;
+                ptr1->next->pages = temp.pages;
+                ptr1->next->price = temp.price;
+                swapped = 1;
+            }
+            ptr1 = ptr1->next;
+        }
+        lptr = ptr1;
+    } while (swapped);
+}
+
+void freeList(Book** head) {
+    Book* temp;
+    while (*head) {
+        temp = *head;
+        *head = (*head)->next;
+        free(temp);
+    }
+}
+
+void menu() {
+    Book* head = NULL;
+    int opt, pos;
+    char searchTitle[100];
+
+    do {
+        printf("\nMenu:\n");
+        printf("1. Read books\n");
+        printf("2. Display books\n");
+        printf("3. Search by title\n");
+        printf("4. Sort by title\n");
+        printf("5. Insert at beginning\n");
+        printf("6. Insert at end\n");
+        printf("7. Insert at position X\n");
+        printf("8. Delete at position X\n");
+        printf("9. Reverse list\n");
+        printf("10. Clear list\n");
+        printf("0. Exit\n");
+        printf("Your choice: ");
+        scanf("%d", &opt);
+        getchar();
+
+        switch (opt) {
+            case 1:
+                printf("How many books do you want to enter? ");
+                int n;
+                scanf("%d", &n);
+                getchar();
+                for (int i = 0; i < n; ++i)
+                    insertAtEnd(&head);
+                break;
+            case 2:
+                displayBooks(head);
+                break;
+            case 3:
+                printf("Enter the title to search: ");
+                fgets(searchTitle, 100, stdin);
+                searchTitle[strcspn(searchTitle, "\n")] = 0;
+                pos = searchByTitle(head, searchTitle);
+                if (pos == -1)
+                    printf("Book not found.\n");
+                else
+                    printf("Book found at position %d.\n", pos);
+                break;
+            case 4:
+                sortListByTitle(&head);
+                printf("List sorted by title.\n");
+                break;
+            case 5:
+                insertAtBeginning(&head);
+                break;
+            case 6:
+                insertAtEnd(&head);
+                break;
+            case 7:
+                printf("Enter position: ");
+                scanf("%d", &pos);
+                getchar();
+                insertAtPosition(&head, pos);
+                break;
+            case 8:
+                printf("Enter position: ");
+                scanf("%d", &pos);
+                getchar();
+                deleteAtPosition(&head, pos);
+                break;
+            case 9:
+                reverseList(&head);
+                printf("List reversed.\n");
+                break;
+            case 10:
+                freeList(&head);
+                printf("List cleared.\n");
+                break;
+            case 0:
+                freeList(&head);
+                printf("Exiting...\n");
+                break;
+            default:
+                printf("Invalid option.\n");
+        }
+    } while (opt != 0);
+}
+
+int main() {
+    menu();
+    return 0;
+}
