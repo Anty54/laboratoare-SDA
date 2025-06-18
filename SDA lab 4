@@ -1,0 +1,262 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct Employee {
+    int key;
+    char name[100];
+    int age;
+    float salary;
+    struct Employee* left;
+    struct Employee* right;
+} Employee;
+
+Employee* createEmployee(int key, char* name, int age, float salary) {
+    Employee* newEmp = (Employee*)malloc(sizeof(Employee));
+    newEmp->key = key;
+    strcpy(newEmp->name, name);
+    newEmp->age = age;
+    newEmp->salary = salary;
+    newEmp->left = newEmp->right = NULL;
+    return newEmp;
+}
+
+Employee* insert(Employee* root, int key, char* name, int age, float salary) {
+    if (!root) return createEmployee(key, name, age, salary);
+    if (key < root->key)
+        root->left = insert(root->left, key, name, age, salary);
+    else if (key > root->key)
+        root->right = insert(root->right, key, name, age, salary);
+    return root;
+}
+
+void printEmployee(Employee* emp) {
+    if (emp)
+        printf("Key: %d, Name: %s, Age: %d, Salary: %.2f\n", emp->key, emp->name, emp->age, emp->salary);
+}
+
+void inorder(Employee* root) {
+    if (root) {
+        inorder(root->left);
+        printEmployee(root);
+        inorder(root->right);
+    }
+}
+
+void preorder(Employee* root) {
+    if (root) {
+        printEmployee(root);
+        preorder(root->left);
+        preorder(root->right);
+    }
+}
+
+void postorder(Employee* root) {
+    if (root) {
+        postorder(root->left);
+        postorder(root->right);
+        printEmployee(root);
+    }
+}
+
+Employee* search(Employee* root, int key) {
+    if (!root || root->key == key) return root;
+    if (key < root->key)
+        return search(root->left, key);
+    return search(root->right, key);
+}
+
+void dfs(Employee* root) {
+    preorder(root);
+}
+
+typedef struct QueueNode {
+    Employee* emp;
+    struct QueueNode* next;
+} QueueNode;
+
+typedef struct Queue {
+    QueueNode *front, *rear;
+} Queue;
+
+Queue* createQueue() {
+    Queue* q = (Queue*)malloc(sizeof(Queue));
+    q->front = q->rear = NULL;
+    return q;
+}
+
+void enqueue(Queue* q, Employee* emp) {
+    QueueNode* temp = (QueueNode*)malloc(sizeof(QueueNode));
+    temp->emp = emp;
+    temp->next = NULL;
+    if (!q->rear) {
+        q->front = q->rear = temp;
+        return;
+    }
+    q->rear->next = temp;
+    q->rear = temp;
+}
+
+Employee* dequeue(Queue* q) {
+    if (!q->front) return NULL;
+    QueueNode* temp = q->front;
+    Employee* emp = temp->emp;
+    q->front = q->front->next;
+    if (!q->front) q->rear = NULL;
+    free(temp);
+    return emp;
+}
+
+int isEmpty(Queue* q) {
+    return q->front == NULL;
+}
+
+void bfs(Employee* root) {
+    if (!root) return;
+    Queue* q = createQueue();
+    enqueue(q, root);
+    while (!isEmpty(q)) {
+        Employee* current = dequeue(q);
+        printEmployee(current);
+        if (current->left) enqueue(q, current->left);
+        if (current->right) enqueue(q, current->right);
+    }
+    free(q);
+}
+
+int countNodes(Employee* root) {
+    if (!root) return 0;
+    return 1 + countNodes(root->left) + countNodes(root->right);
+}
+
+void storeInorder(Employee* root, Employee** array, int* index) {
+    if (!root) return;
+    storeInorder(root->left, array, index);
+    array[(*index)++] = root;
+    storeInorder(root->right, array, index);
+}
+
+Employee* buildBalancedTree(Employee** array, int start, int end) {
+    if (start > end) return NULL;
+    int mid = (start + end) / 2;
+    Employee* root = array[mid];
+    root->left = buildBalancedTree(array, start, mid - 1);
+    root->right = buildBalancedTree(array, mid + 1, end);
+    return root;
+}
+
+Employee* balanceTree(Employee* root) {
+    int n = countNodes(root);
+    if (n == 0) return NULL;
+    Employee** array = (Employee**)malloc(n * sizeof(Employee*));
+    int index = 0;
+    storeInorder(root, array, &index);
+    Employee* newRoot = buildBalancedTree(array, 0, n - 1);
+    free(array);
+    return newRoot;
+}
+
+void mirrorTree(Employee* root) {
+    if (!root) return;
+    Employee* temp = root->left;
+    root->left = root->right;
+    root->right = temp;
+    mirrorTree(root->left);
+    mirrorTree(root->right);
+}
+
+void clearTree(Employee** root) {
+    if (!*root) return;
+    clearTree(&(*root)->left);
+    clearTree(&(*root)->right);
+    free(*root);
+    *root = NULL;
+}
+
+void menu() {
+    Employee* root = NULL;
+    int option;
+
+    do {
+        printf("\nMenu:\n");
+        printf("1. Read tree elements\n");
+        printf("2. Display tree elements\n");
+        printf("3. Search by key\n");
+        printf("4. Inorder traversal\n");
+        printf("5. Preorder traversal\n");
+        printf("6. Postorder traversal\n");
+        printf("7. Depth-first search (DFS)\n");
+        printf("8. Breadth-first search (BFS)\n");
+        printf("9. Balance tree\n");
+        printf("10. Mirror tree\n");
+        printf("11. Clear tree\n");
+        printf("12. Free tree memory and exit\n");
+        printf("Your choice: ");
+        scanf("%d", &option);
+        getchar();
+
+        if (option == 1) {
+            int n;
+            printf("How many employees: ");
+            scanf("%d", &n);
+            getchar();
+            for (int i = 0; i < n; i++) {
+                int key, age;
+                float salary;
+                char name[100];
+                printf("Enter key: ");
+                scanf("%d", &key);
+                getchar();
+                printf("Enter name: ");
+                fgets(name, 100, stdin);
+                name[strcspn(name, "\n")] = 0;
+                printf("Enter age: ");
+                scanf("%d", &age);
+                printf("Enter salary: ");
+                scanf("%f", &salary);
+                getchar();
+                root = insert(root, key, name, age, salary);
+            }
+        } else if (option == 2) {
+            inorder(root);
+        } else if (option == 3) {
+            int key;
+            printf("Enter key: ");
+            scanf("%d", &key);
+            Employee* result = search(root, key);
+            if (result)
+                printEmployee(result);
+            else
+                printf("Node not found.\n");
+        } else if (option == 4) {
+            inorder(root);
+        } else if (option == 5) {
+            preorder(root);
+        } else if (option == 6) {
+            postorder(root);
+        } else if (option == 7) {
+            dfs(root);
+        } else if (option == 8) {
+            bfs(root);
+        } else if (option == 9) {
+            root = balanceTree(root);
+            printf("Tree balanced.\n");
+        } else if (option == 10) {
+            mirrorTree(root);
+            printf("Tree mirrored.\n");
+        } else if (option == 11) {
+            clearTree(&root);
+            printf("Tree cleared.\n");
+        } else if (option == 12) {
+            clearTree(&root);
+            printf("Tree memory freed. Exiting...\n");
+        } else {
+            printf("Invalid option.\n");
+        }
+    } while (option != 12);
+}
+
+int main() {
+    menu();
+    return 0;
+}
