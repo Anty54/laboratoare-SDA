@@ -2,145 +2,156 @@
 #include <stdlib.h>
 #include <time.h>
 
-void initializeArray(int *array, int n) {
+void initialize(int *v, int n) {
     for (int i = 0; i < n; i++) {
-        array[i] = rand() % 10000;
+        v[i] = rand() % 10000;
     }
 }
 
-void displayArray(int *array, int n) {
+void display(int *v, int n) {
     for (int i = 0; i < n; i++) {
-        printf("%d ", array[i]);
+        printf("%d ", v[i]);
     }
     printf("\n");
 }
 
-void selectionSort(int *array, int n) {
+void selection_sort(int *v, int n) {
     for (int i = 0; i < n - 1; i++) {
         int min = i;
-        for (int j = i + 1; j < n; j++) {
-            if (array[j] < array[min])
+        for (int j = i + 1; j < n; j++)
+            if (v[j] < v[min])
                 min = j;
-        }
         if (min != i) {
-            int temp = array[i];
-            array[i] = array[min];
-            array[min] = temp;
+            int temp = v[i];
+            v[i] = v[min];
+            v[min] = temp;
         }
     }
 }
 
-void heapify(int *array, int n, int i) {
-    int largest = i;
-    int l = 2 * i + 1;
-    int r = 2 * i + 2;
-    if (l < n && array[l] > array[largest])
-        largest = l;
-    if (r < n && array[r] > array[largest])
-        largest = r;
-    if (largest != i) {
-        int temp = array[i];
-        array[i] = array[largest];
-        array[largest] = temp;
-        heapify(array, n, largest);
-    }
-}
-
-void heapSort(int *array, int n) {
-    for (int i = n / 2 - 1; i >= 0; i--)
-        heapify(array, n, i);
-    for (int i = n - 1; i >= 0; i--) {
-        int temp = array[0];
-        array[0] = array[i];
-        array[i] = temp;
-        heapify(array, i, 0);
-    }
-}
-
-void empiricalAnalysis() {
-    int sizes[] = {100, 1000, 10000, 100000};
-    printf("N\tSelection Sort\tHeap Sort\n");
-    for (int s = 0; s < 4; s++) {
-        int n = sizes[s];
-        int *array1 = (int *)malloc(n * sizeof(int));
-        int *array2 = (int *)malloc(n * sizeof(int));
-        for (int i = 0; i < n; i++) {
-            int val = rand() % 10000;
-            array1[i] = val;
-            array2[i] = val;
+void quick_sort(int *v, int left, int right) {
+    if (left < right) {
+        int pivot = v[right];
+        int i = left - 1;
+        for (int j = left; j < right; j++) {
+            if (v[j] < pivot) {
+                i++;
+                int temp = v[i];
+                v[i] = v[j];
+                v[j] = temp;
+            }
         }
-        clock_t start1 = clock();
-        selectionSort(array1, n);
-        clock_t end1 = clock();
+        int temp = v[i + 1];
+        v[i + 1] = v[right];
+        v[right] = temp;
 
-        clock_t start2 = clock();
-        heapSort(array2, n);
-        clock_t end2 = clock();
-
-        printf("%d\t%.4lf s\t%.4lf s\n", n,
-               (double)(end1 - start1) / CLOCKS_PER_SEC,
-               (double)(end2 - start2) / CLOCKS_PER_SEC);
-        free(array1);
-        free(array2);
+        int p = i + 1;
+        quick_sort(v, left, p - 1);
+        quick_sort(v, p + 1, right);
     }
+}
+
+void copy_array(int *src, int *dest, int n) {
+    for (int i = 0; i < n; i++)
+        dest[i] = src[i];
 }
 
 int main() {
-    int *array = NULL, n = 0;
-    int choice;
-    srand(time(NULL));
+    int *v = NULL, *temp = NULL, n, opt;
+    clock_t start, end;
+
     do {
-        printf("\nMenu:\n");
-        printf("1. Initialize array\n");
+        printf("\nMENU:\n");
+        printf("1. Initialize array with random numbers\n");
         printf("2. Display array\n");
-        printf("3. Free array memory\n");
-        printf("4. Sort array with selection sort and show time\n");
-        printf("5. Sort array with heap sort and show time\n");
-        printf("6. Empirical time analysis\n");
-        printf("7. Exit\n");
-        printf("Choose: ");
-        scanf("%d", &choice);
-        switch (choice) {
+        printf("3. Sort using simple method (selection sort)\n");
+        printf("4. Sort using efficient method (quick sort)\n");
+        printf("5. Sort time analysis for N = 100, 1000, 10000, 100000\n");
+        printf("6. Free memory and exit\n");
+        printf("Option: ");
+        scanf("%d", &opt);
+
+        switch (opt) {
             case 1:
-                printf("Enter size: ");
+                printf("Enter array size: ");
                 scanf("%d", &n);
-                array = (int *)malloc(n * sizeof(int));
-                initializeArray(array, n);
+                v = (int *)malloc(n * sizeof(int));
+                initialize(v, n);
                 break;
+
             case 2:
-                if (array)
-                    displayArray(array, n);
-                else
-                    printf("Array is empty.\n");
+                if (v) display(v, n);
+                else printf("Array is not initialized!\n");
                 break;
+
             case 3:
-                free(array);
-                array = NULL;
-                n = 0;
+                if (v) {
+                    temp = (int *)malloc(n * sizeof(int));
+                    copy_array(v, temp, n);
+                    start = clock();
+                    selection_sort(temp, n);
+                    end = clock();
+                    printf("Selection sort time: %.6f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+                    free(temp);
+                } else {
+                    printf("Array is not initialized!\n");
+                }
                 break;
+
             case 4:
-                if (array) {
-                    clock_t start = clock();
-                    selectionSort(array, n);
-                    clock_t end = clock();
-                    printf("Sorted in %.4lf seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+                if (v) {
+                    temp = (int *)malloc(n * sizeof(int));
+                    copy_array(v, temp, n);
+                    start = clock();
+                    quick_sort(temp, 0, n - 1);
+                    end = clock();
+                    printf("Quick sort time: %.6f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+                    free(temp);
+                } else {
+                    printf("Array is not initialized!\n");
                 }
                 break;
-            case 5:
-                if (array) {
-                    clock_t start = clock();
-                    heapSort(array, n);
-                    clock_t end = clock();
-                    printf("Sorted in %.4lf seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+
+            case 5: {
+                int sizes[] = {100, 1000, 10000, 100000};
+                printf("\nTime analysis:\n");
+                printf("N\tSelectionSort\tQuickSort\n");
+                for (int i = 0; i < 4; i++) {
+                    n = sizes[i];
+                    v = (int *)malloc(n * sizeof(int));
+                    temp = (int *)malloc(n * sizeof(int));
+                    initialize(v, n);
+
+                    copy_array(v, temp, n);
+                    start = clock();
+                    selection_sort(temp, n);
+                    end = clock();
+                    double t1 = (double)(end - start) / CLOCKS_PER_SEC;
+
+                    copy_array(v, temp, n);
+                    start = clock();
+                    quick_sort(temp, 0, n - 1);
+                    end = clock();
+                    double t2 = (double)(end - start) / CLOCKS_PER_SEC;
+
+                    printf("%d\t%.6f\t%.6f\n", n, t1, t2);
+                    free(v);
+                    free(temp);
                 }
                 break;
+            }
+
             case 6:
-                empiricalAnalysis();
+                free(v);
+                printf("Memory freed. Exiting...\n");
                 break;
-            case 7:
-                if (array) free(array);
-                break;
+
+            default:
+                printf("Invalid option!\n");
         }
-    } while (choice != 7);
+
+    } while (opt != 6);
+
     return 0;
 }
+
