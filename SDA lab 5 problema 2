@@ -1,0 +1,157 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+void initialize_array(int *arr, int n) {
+    for (int i = 0; i < n; i++)
+        arr[i] = rand() % 10000;
+}
+
+void display_array(int *arr, int n) {
+    for (int i = 0; i < n; i++)
+        printf("%d ", arr[i]);
+    printf("\n");
+}
+
+int linear_search(int *arr, int n, int target) {
+    for (int i = 0; i < n; i++)
+        if (arr[i] == target)
+            return i;
+    return -1;
+}
+
+int compare(const void *a, const void *b) {
+    return (*(int *)a - *(int *)b);
+}
+
+int binary_search(int *arr, int left, int right, int target) {
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+        if (arr[mid] == target)
+            return mid;
+        if (arr[mid] < target)
+            left = mid + 1;
+        else
+            right = mid - 1;
+    }
+    return -1;
+}
+
+int main() {
+    int *arr = NULL;
+    int n, option;
+    clock_t start, end;
+
+    do {
+        printf("\nMENU:\n");
+        printf("1. Initialize array with random numbers\n");
+        printf("2. Display array\n");
+        printf("3. Search number using linear search\n");
+        printf("4. Search number using binary search\n");
+        printf("5. Time analysis for 10000 searches (N = 100, 1000, 10000, 100000)\n");
+        printf("6. Free memory and exit\n");
+        printf("Option: ");
+        scanf("%d", &option);
+
+        switch (option) {
+            case 1:
+                printf("Enter array size: ");
+                scanf("%d", &n);
+                arr = (int *)malloc(n * sizeof(int));
+                initialize_array(arr, n);
+                break;
+
+            case 2:
+                if (arr) display_array(arr, n);
+                else printf("Array not initialized!\n");
+                break;
+
+            case 3: {
+                if (arr) {
+                    int x;
+                    printf("Enter number to search: ");
+                    scanf("%d", &x);
+                    start = clock();
+                    int found = linear_search(arr, n, x);
+                    end = clock();
+                    printf("Linear search %s. Time: %.6f seconds\n",
+                           found != -1 ? "found" : "not found",
+                           (double)(end - start) / CLOCKS_PER_SEC);
+                } else {
+                    printf("Array not initialized!\n");
+                }
+                break;
+            }
+
+            case 4: {
+                if (arr) {
+                    int *sorted = (int *)malloc(n * sizeof(int));
+                    for (int i = 0; i < n; i++)
+                        sorted[i] = arr[i];
+                    qsort(sorted, n, sizeof(int), compare);
+                    int x;
+                    printf("Enter number to search: ");
+                    scanf("%d", &x);
+                    start = clock();
+                    int found = binary_search(sorted, 0, n - 1, x);
+                    end = clock();
+                    printf("Binary search %s. Time: %.6f seconds\n",
+                           found != -1 ? "found" : "not found",
+                           (double)(end - start) / CLOCKS_PER_SEC);
+                    free(sorted);
+                } else {
+                    printf("Array not initialized!\n");
+                }
+                break;
+            }
+
+            case 5: {
+                int sizes[] = {100, 1000, 10000, 100000};
+                printf("N\tLinear Search\tBinary Search\n");
+                for (int s = 0; s < 4; s++) {
+                    n = sizes[s];
+                    arr = (int *)malloc(n * sizeof(int));
+                    initialize_array(arr, n);
+
+                    start = clock();
+                    for (int i = 0; i < 10000; i++) {
+                        int target = rand() % 10000;
+                        linear_search(arr, n, target);
+                    }
+                    end = clock();
+                    double linear_time = (double)(end - start) / CLOCKS_PER_SEC;
+
+                    int *sorted = (int *)malloc(n * sizeof(int));
+                    for (int i = 0; i < n; i++)
+                        sorted[i] = arr[i];
+                    qsort(sorted, n, sizeof(int), compare);
+
+                    start = clock();
+                    for (int i = 0; i < 10000; i++) {
+                        int target = rand() % 10000;
+                        binary_search(sorted, 0, n - 1, target);
+                    }
+                    end = clock();
+                    double binary_time = (double)(end - start) / CLOCKS_PER_SEC;
+
+                    printf("%d\t%.6f\t%.6f\n", n, linear_time, binary_time);
+
+                    free(arr);
+                    free(sorted);
+                }
+                break;
+            }
+
+            case 6:
+                free(arr);
+                printf("Memory freed. Exiting...\n");
+                break;
+
+            default:
+                printf("Invalid option!\n");
+        }
+
+    } while (option != 6);
+
+    return 0;
+}
