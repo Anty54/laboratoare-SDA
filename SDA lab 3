@@ -1,0 +1,169 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct Node {
+    int key;
+    char name[100];
+    struct Node* left;
+    struct Node* right;
+} Node;
+
+Node* createNode(int key, char* name) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->key = key;
+    strcpy(newNode->name, name);
+    newNode->left = newNode->right = NULL;
+    return newNode;
+}
+
+Node* insert(Node* root, int key, char* name) {
+    if (root == NULL)
+        return createNode(key, name);
+    if (key < root->key)
+        root->left = insert(root->left, key, name);
+    else if (key > root->key)
+        root->right = insert(root->right, key, name);
+    return root;
+}
+
+void inorder(Node* root) {
+    if (root != NULL) {
+        inorder(root->left);
+        printf("Key: %d, Name: %s\n", root->key, root->name);
+        inorder(root->right);
+    }
+}
+
+int depth(Node* root) {
+    if (root == NULL)
+        return 0;
+    int left = depth(root->left);
+    int right = depth(root->right);
+    return (left > right ? left : right) + 1;
+}
+
+Node* search(Node* root, int key) {
+    if (root == NULL || root->key == key)
+        return root;
+    if (key < root->key)
+        return search(root->left, key);
+    return search(root->right, key);
+}
+
+int nodeDepth(Node* root, int key, int level) {
+    if (root == NULL)
+        return -1;
+    if (root->key == key)
+        return level;
+    int downlevel = nodeDepth(root->left, key, level + 1);
+    if (downlevel != -1)
+        return downlevel;
+    return nodeDepth(root->right, key, level + 1);
+}
+
+int nodeHeight(Node* root) {
+    if (root == NULL)
+        return -1;
+    int left = nodeHeight(root->left);
+    int right = nodeHeight(root->right);
+    return (left > right ? left : right) + 1;
+}
+
+void findLeaves(Node* root) {
+    if (root == NULL)
+        return;
+    if (root->left == NULL && root->right == NULL)
+        printf("Leaf - Key: %d, Name: %s\n", root->key, root->name);
+    findLeaves(root->left);
+    findLeaves(root->right);
+}
+
+void clearTree(Node** root) {
+    if (*root == NULL)
+        return;
+    clearTree(&(*root)->left);
+    clearTree(&(*root)->right);
+    free(*root);
+    *root = NULL;
+}
+
+void menu() {
+    Node* root = NULL;
+    int option;
+    do {
+        printf("\nMenu:\n");
+        printf("1. Read tree elements\n");
+        printf("2. Display tree elements\n");
+        printf("3. Calculate tree depth\n");
+        printf("4. Search for a node by key\n");
+        printf("5. Calculate node depth by key\n");
+        printf("6. Calculate node height by key\n");
+        printf("7. Display all leaves\n");
+        printf("8. Clear tree elements\n");
+        printf("9. Free tree memory and exit\n");
+        printf("Your choice: ");
+        scanf("%d", &option);
+        if (option == 1) {
+            int n, key;
+            char name[100];
+            printf("How many nodes to insert: ");
+            scanf("%d", &n);
+            for (int i = 0; i < n; i++) {
+                printf("Enter key: ");
+                scanf("%d", &key);
+                printf("Enter name: ");
+                getchar();
+                fgets(name, 100, stdin);
+                name[strcspn(name, "\n")] = 0;
+                root = insert(root, key, name);
+            }
+        } else if (option == 2) {
+            inorder(root);
+        } else if (option == 3) {
+            printf("Tree depth: %d\n", depth(root));
+        } else if (option == 4) {
+            int key;
+            printf("Enter key to search: ");
+            scanf("%d", &key);
+            Node* found = search(root, key);
+            if (found)
+                printf("Found - Key: %d, Name: %s\n", found->key, found->name);
+            else
+                printf("Node not found.\n");
+        } else if (option == 5) {
+            int key;
+            printf("Enter key to find depth: ");
+            scanf("%d", &key);
+            int d = nodeDepth(root, key, 0);
+            if (d != -1)
+                printf("Node depth: %d\n", d);
+            else
+                printf("Node not found.\n");
+        } else if (option == 6) {
+            int key;
+            printf("Enter key to find height: ");
+            scanf("%d", &key);
+            Node* found = search(root, key);
+            if (found)
+                printf("Node height: %d\n", nodeHeight(found));
+            else
+                printf("Node not found.\n");
+        } else if (option == 7) {
+            findLeaves(root);
+        } else if (option == 8) {
+            clearTree(&root);
+            printf("Tree cleared.\n");
+        } else if (option == 9) {
+            clearTree(&root);
+            printf("Tree memory freed. Exiting...\n");
+        } else {
+            printf("Invalid option.\n");
+        }
+    } while (option != 9);
+}
+
+int main() {
+    menu();
+    return 0;
+}
